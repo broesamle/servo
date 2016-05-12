@@ -36030,6 +36030,12 @@
     "deleted_reftests": {},
     "items": {
       "testharness": {
+        "cssom-view/HTMLBody-ScrollArea_quirksmode.html": [
+          {
+            "path": "cssom-view/HTMLBody-ScrollArea_quirksmode.html",
+            "url": "/cssom-view/HTMLBody-ScrollArea_quirksmode.html"
+          }
+        ],
         "url/url-domainToUnicode.html": [
           {
             "path": "url/url-domainToUnicode.html",
