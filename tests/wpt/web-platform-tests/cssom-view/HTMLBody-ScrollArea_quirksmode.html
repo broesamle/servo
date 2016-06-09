@@ -120,7 +120,7 @@ function testNotPotScrollable (document_overflow, body_overflow) {
     assert_equals(window.innerHeight, document.body.scrollHeight);
     assert_equals(document.body.scrollHeight, oldScrollHeight);
 }
-tests = [["visible", "scroll"], ["scroll", "visible"], ["scroll", "scroll"]];
+tests = [["visible", "scroll"], ["scroll", "visible"], ["visible", "visible"]];
 for (var i = 0; i < tests.length; i++) {
     test( function () {
         testNotPotScrollable (tests[i][0], tests[i][1]);
