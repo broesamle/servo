@@ -254,6 +254,7 @@ impl InlineFragmentsAccumulator {
 
     fn from_inline_node<N>(node: &N, style_context: &SharedStyleContext) -> InlineFragmentsAccumulator
             where N: ThreadSafeLayoutNode {
+        println!("BROE: [from_inline_node] {:?}", node);
         InlineFragmentsAccumulator {
             fragments: IntermediateInlineFragments::new(),
             enclosing_node: Some(InlineFragmentNodeInfo {
@@ -345,7 +346,7 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
 
     /// Builds the fragment for the given block or subclass thereof.
     fn build_fragment_for_block(&mut self, node: &ConcreteThreadSafeLayoutNode) -> Fragment {
-        println!("BROE: [build_fragment_for_block] {:?}", node);
+        println!("BROE: [build_fragment_for_block] {:?}\n    style={:?}", node, node.style(self.style_context()));
         let specific_fragment_info = match node.type_id() {
             Some(LayoutNodeType::Element(LayoutElementType::HTMLIFrameElement)) => {
                 SpecificFragmentInfo::Iframe(IframeFragmentInfo::new(node))
@@ -402,6 +403,7 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
                                       absolute_descendants: &mut AbsoluteDescendants,
                                       legalizer: &mut Legalizer,
                                       node: &ConcreteThreadSafeLayoutNode) {
+        println!("BROE: [flush_inline_fragments_to_flow]\n    flow={:?}\n    node={:?}", flow, node);
         let mut fragments = fragment_accumulator.to_intermediate_inline_fragments();
         if fragments.is_empty() {
             return
@@ -649,7 +651,7 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
     /// `<textarea>`.
     fn build_flow_for_block_like(&mut self, flow: FlowRef, node: &ConcreteThreadSafeLayoutNode)
                                  -> ConstructionResult {
-    println!("BROE: [build_flow_for_block_like] {:?}", node);
+    println!("BROE: [build_flow_for_block_like] {:?}\n    style={:?}", node, node.style(self.style_context()));
         let mut initial_fragments = IntermediateInlineFragments::new();
         let node_is_input_or_text_area =
            node.type_id() == Some(LayoutNodeType::Element(LayoutElementType::HTMLInputElement)) ||
@@ -786,6 +788,8 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
         // Concatenate all the fragments of our kids, creating {ib} splits as necessary.
         let mut is_empty = true;
         for kid in node.children() {
+            println!("BROE: [build_fragments_for_nonreplaced_inline_content] kid={:?}", kid);
+
             is_empty = false;
             if kid.get_pseudo_element_type() != PseudoElementType::Normal {
                 self.process(&kid);
@@ -793,8 +797,8 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
             match kid.swap_out_construction_result() {
                 ConstructionResult::None => {}
                 ConstructionResult::Flow(flow, kid_abs_descendants) => {
+                    println!("BROE: [build_fragments_for_nonreplaced_inline_content] KID constr.res. FLOW");
                     if !flow::base(&*flow).flags.contains(IS_ABSOLUTELY_POSITIONED) {
-                        println!("BROE: [build_fragments_for_nonreplaced_inline_content] ABS-POS");
                         opt_inline_block_splits.push_back(InlineBlockSplit::new(
                             &mut fragment_accumulator, node, self.style_context(), flow));
                         abs_descendants.push_descendants(kid_abs_descendants);
@@ -807,7 +811,7 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
                         let kid_restyle_damage = flow.as_block().fragment.restyle_damage;
                         let fragment_info = SpecificFragmentInfo::InlineAbsolute(
                             InlineAbsoluteFragmentInfo::new(flow));
-                        println!("BROE: [build_fragments_for_nonreplaced_inline_content] FRGM kid_node={:?} \n    kid_style={:?}", kid_node, kid_style);
+                        println!("BROE: [build_fragments_for_nonreplaced_inline_content] ID constr.res. FLOW kid_node={:?} \n    kid_style={:?}", kid_node, kid_style);
                         fragment_accumulator.push(Fragment::from_opaque_node_and_style(
                                 kid_node,
                                 kid_pseudo,
@@ -825,6 +829,7 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
                             splits,
                             fragments: successors,
                         })) => {
+                    println!("BROE: [build_fragments_for_nonreplaced_inline_content] ID constr.res. INL-FRGMNTS");
                     // Bubble up {ib} splits.
                     self.accumulate_inline_block_splits(splits,
                                                         node,
@@ -896,6 +901,8 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
                 splits: opt_inline_block_splits,
                 fragments: fragment_accumulator.to_intermediate_inline_fragments(),
             });
+            println!("BROE: [build_fragments_for_nonreplaced_inline_content] construction_item=---");
+            // BROE: maybe this is where the info is lost.
             ConstructionResult::ConstructionItem(construction_item)
         } else {
             ConstructionResult::None
@@ -1022,12 +1029,15 @@ impl<'a, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode>
                 splits: LinkedList::new(),
                 fragments: fragment_accumulator.to_intermediate_inline_fragments(),
             });
+
+        println!("BROE: [build_fragment_for_absolutely_positioned_inline] construction_item=---");
         ConstructionResult::ConstructionItem(construction_item)
     }
 
     /// Builds one or more fragments for a node with `display: inline`. This yields an
     /// `InlineFragmentsConstructionResult`.
     fn build_fragments_for_inline(&mut self, node: &ConcreteThreadSafeLayoutNode) -> ConstructionResult {
+        println!("BROE: [build_fragments_for_inline] {:?}\n    style={:?}", node, node.style(self.style_context()));
         // Is this node replaced content?
         if !node.is_replaced_content() {
             // Go to a path that concatenates our kids' fragments.
@@ -1484,6 +1494,7 @@ impl<'a, ConcreteThreadSafeLayoutNode> PostorderNodeMutTraversal<ConcreteThreadS
     // TODO: This should actually consult the table in that section to get the
     // final computed value for 'display'.
     fn process(&mut self, node: &ConcreteThreadSafeLayoutNode) {
+        println!("BROE: [F.C./process] node={:?}", node);
         node.insert_flags(HAS_NEWLY_CONSTRUCTED_FLOW);
 
         // Bail out if this node has an ancestor with display: none.
@@ -1568,6 +1579,14 @@ impl<'a, ConcreteThreadSafeLayoutNode> PostorderNodeMutTraversal<ConcreteThreadS
             // FIXME(pcwalton, #3307): This is not sufficient to handle floated generated content.
             (display::T::inline, float::T::none, _) => {
                 let construction_result = self.build_fragments_for_inline(node);
+                match construction_result {
+                    ConstructionResult::ConstructionItem(_) =>
+                        println!("BROE:     construction_result=CONSTR-ITEM"),
+                    ConstructionResult::Flow(_,_) =>
+                        println!("BROE:     construction_result=FLOW"),
+                    ConstructionResult::None =>
+                        println!("BROE:     construction_result=NONE"),
+                }
                 self.set_flow_construction_result(node, construction_result)
             }
 
@@ -1685,6 +1704,7 @@ impl<ConcreteThreadSafeLayoutNode> NodeUtils for ConcreteThreadSafeLayoutNode
 
     #[inline(always)]
     fn set_flow_construction_result(self, mut result: ConstructionResult) {
+        println!("BROE: [set_flow_construction_result]");
         if self.can_be_fragmented() {
             if let ConstructionResult::Flow(ref mut flow, _) = result {
                 flow::mut_base(FlowRef::deref_mut(flow)).flags.insert(CAN_BE_FRAGMENTED);
