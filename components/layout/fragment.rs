@@ -674,6 +674,7 @@ impl Fragment {
                                       mut restyle_damage: RestyleDamage,
                                       specific: SpecificFragmentInfo)
                                       -> Fragment {
+        println!("BROE: [from_opaque_node_and_style] opacity={:?}", style.get_effects().opacity);
         let writing_mode = style.writing_mode;
 
         restyle_damage.remove(RECONSTRUCT_FLOW);
@@ -2977,14 +2978,16 @@ impl fmt::Debug for Fragment {
             "".to_owned()
         };
 
-        write!(f, "{}({}) [{:?}] border_box={:?}{}{}{}",
+        write!(f, "{}({}) [{:?}] border_box={:?}{}{}{}\n    opacity={:?}",
             self.specific.get_type(),
             self.debug_id,
             self.specific,
             self.border_box,
             border_padding_string,
             margin_string,
-            damage_string)
+            damage_string,
+            self.style.get_effects().opacity
+            )
     }
 }
 
